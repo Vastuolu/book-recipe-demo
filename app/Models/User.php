@@ -54,6 +54,14 @@ class User extends Authenticatable implements JWTSubject
 
     public $timestamps = false;
 
+    public function recipes(){
+        return $this->hasMany(Recipe::class);
+    }
+
+    public function favorite_food(){
+        return $this->hasMany(FavoriteFood::class);
+    }
+
     public function getJWTIdentifier(){
         return $this->getKey();
     }
