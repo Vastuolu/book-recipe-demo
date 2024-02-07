@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Helper\responseHelper;
+use App\Http\Resources\DetailRecipeResource;
 use App\Http\Resources\RecipeResource;
 use App\Models\FavoriteFood;
 use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class RecipeController extends Controller
 {
@@ -60,6 +62,27 @@ class RecipeController extends Controller
             Log::error($error->getMessage());
             $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi');
             return response()->json($resData, 500);
+        }
+    }
+
+    public function detailRecipe(Request $request, $recipe_id){
+        try {
+            $recipe = Recipe::with('user', 'level', 'category')->find($recipe_id);
+            $total = $recipe->count();
+            $user_id = JWTAuth::user()->user_id ?? $request->input('UserId');
+            $recipe->isFavorite = FavoriteFood::where('user_id', $user_id)->where('recipe_id', $recipe_id)->exists();
+
+            if($total === 0){
+                $resData = responseHelper::response(404, 'Recipe tidak ditemukan', $total);
+                return response()->json($resData);
+            }
+
+            $resData = responseHelper::response(200, 'Detail Recipe berhasil dimuat', $total);
+            return (new DetailRecipeResource($recipe))->additional($resData);
+        } catch (\Throwable $error) {
+            Log::error($error->getMessage());
+            $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi.');
+            return response()->json($resData,500);
         }
     }
 
