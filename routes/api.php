@@ -25,3 +25,4 @@ Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
 Route::get('/daftar-resep', [RecipeController::class, 'getRecipe']);
 Route::get('/detail-recipe/{recipe_id}', [RecipeController::class, 'detailRecipe']);
+Route::get('/my-recipes', [RecipeController::class, 'myRecipes']);

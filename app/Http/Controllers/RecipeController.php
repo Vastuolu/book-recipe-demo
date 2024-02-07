@@ -16,7 +16,7 @@ class RecipeController extends Controller
     public function getRecipe(Request $request){
         try {
             $recipes = Recipe::with('user', 'category', 'level')->where('is_deleted', false);
-            $user_id = $request->input('user_id');
+            $user_id = $request->input('userId');
 
             if(!is_null($user_id)){
                 $userFavFoods = FavoriteFood::where('user_id', $user_id)->get();
@@ -62,6 +62,58 @@ class RecipeController extends Controller
             Log::error($error->getMessage());
             $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi');
             return response()->json($resData, 500);
+        }
+    }
+
+    public function myRecipes(Request $request){
+        try {
+            $user_id = $request->input('userId');
+            $recipes = Recipe::with('user', 'category', 'level')->where('is_deleted', false)->where('user_id', $user_id);
+
+            if(!is_null($user_id)){
+                $userFavFoods = FavoriteFood::where('user_id', $user_id)->get();
+            }else{
+                $userFavFoods = collect();
+            }
+
+            $time = $request->input('time');
+            switch($time){
+                case 30:
+                    $recipes->whereBetween('time_cook', [0,30]);
+                    break;
+                case 60:
+                    $recipes->whereBetween('time_cook', [30,60]);
+                    break;
+                case 90:
+                    $recipes->where('time_cook', '>', 60);
+                    break;
+                default :
+                    $recipes->where('time_cook', '>', 0);
+            }
+
+            $recipes = RecipeController::commonFunction($recipes,$request);
+
+            $pageSize = intval($request->input('pageSize'));
+            $pageNumber = intval($request->input('pageNumber'));
+            $dataRecipes = $recipes->paginate($pageSize, ['*'], 'page', $pageNumber);
+            $total = $dataRecipes->total();
+
+            $dataRecipes->getCollection()->transform(function ($recipe) use ($userFavFoods){
+                $recipe->user_fav_foods = $userFavFoods ? $userFavFoods->where('recipe_id', $recipe->recipe_id)->toArray() : [];
+                return $recipe;
+            });
+
+            if($total === 0){
+                $resData = responseHelper::response(200, 'Resep masakan tidak tersedia',0, []);
+                return response()->json($resData);
+            }
+
+            $resData = responseHelper::response(200, 'Data Berhasil Dimuat', $total);
+            return RecipeResource::collection($dataRecipes)->additional($resData);
+        } catch (\Throwable $error) {
+            Log::error($error->getMessage());
+            $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi');
+            return response()->json($resData,500);
         }
     }
 
