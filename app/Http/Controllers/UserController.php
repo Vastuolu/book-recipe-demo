@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Helper\responseHelper;
+use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Log;
+use Tymon\JWTAuth\Contracts\Providers\JWT;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\JWT as JWTAuthJWT;
 
 class UserController extends Controller
 {
@@ -53,5 +57,24 @@ class UserController extends Controller
             $resData = responseHelper::response(500, 'Terjadi kesalahan server. Silahkan coba kembali');
             return response()->json($resData);
         }
+    }
+
+    public function login(LoginRequest $request){
+        $credentials = $request->only('username', 'password');
+
+        if(!$token = JWTAuth::attempt($credentials)){
+            $resData = responseHelper::response(401, 'Unathorized');
+            return response()->json($resData);
+        }
+
+        $user = JWTAuth::user();
+        $resData = responseHelper::response(200, 'Login Berhasil', 1, [
+            'id' => $user->user_id,
+            'token' => $token,
+            'type' => 'Bearer',
+            'username' => $user->username,
+            'role' => $user->role,
+        ]);
+        return response()->json($resData)->header('Authorization', 'Bearer ' . $token);
     }
 }
