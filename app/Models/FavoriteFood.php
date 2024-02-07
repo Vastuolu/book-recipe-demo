@@ -25,6 +25,10 @@ class FavoriteFood extends Model
         'modified_time',
     ];
 
+    public function recipe(){
+        return $this->belongsTo(Recipe::class, 'recipe_id', 'recipe_id');
+    }
+
     public static function boot(){
         parent::boot();
         static::creating(function ($model){

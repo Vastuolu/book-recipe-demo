@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FavoriteFoodController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\UserController;
 use App\Models\Recipe;
@@ -26,3 +27,4 @@ Route::post('/login', [UserController::class, 'login']);
 Route::get('/daftar-resep', [RecipeController::class, 'getRecipe']);
 Route::get('/detail-recipe/{recipe_id}', [RecipeController::class, 'detailRecipe']);
 Route::get('/my-recipes', [RecipeController::class, 'myRecipes']);
+Route::get('/my-favorites', [FavoriteFoodController::class, 'getFavorite']);
