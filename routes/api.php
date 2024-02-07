@@ -28,3 +28,4 @@ Route::get('/daftar-resep', [RecipeController::class, 'getRecipe']);
 Route::get('/detail-recipe/{recipe_id}', [RecipeController::class, 'detailRecipe']);
 Route::get('/my-recipes', [RecipeController::class, 'myRecipes']);
 Route::get('/my-favorites', [FavoriteFoodController::class, 'getFavorite']);
+Route::put('/put-favorite/{recipeId}', [FavoriteFoodController::class, 'putFavorite']);

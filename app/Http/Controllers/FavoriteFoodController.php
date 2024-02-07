@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Helper\responseHelper;
 use App\Http\Resources\FavoriteFoodResource;
 use App\Models\FavoriteFood;
+use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 class FavoriteFoodController extends Controller
 {
@@ -37,6 +39,52 @@ class FavoriteFoodController extends Controller
 
             $resData = responseHelper::response(200, 'Data Favorite Resep berhasil dimuat',$total);
             return FavoriteFoodResource::collection($dataFavorites)->additional($resData);
+        } catch (\Throwable $error) {
+            Log::error($error->getMessage());
+            $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi.');
+            return response()->json($resData,500);
+        }
+    }
+
+    public function putFavorite(Request $request, $recipeId){
+        try {
+            $user_id = $request->userId;
+            $user = User::find($user_id);
+            if(!$user){
+                $resData = responseHelper::response(401, "Unauthorized");
+                return response()->json($resData,401);
+            }
+            $data = Recipe::find($recipeId);
+
+            if(!$data){
+                $resData = responseHelper::response(404, "Resep Tidak ditemukan");
+                return response()->json($resData,404);
+            }
+
+            $favoriteData = FavoriteFood::where('user_id', $user_id)
+            ->where('recipe_id', $recipeId)
+            ->exists();
+
+            if($favoriteData){
+                FavoriteFood::where('user_id', $user_id)
+                ->where('recipe_id', $recipeId)
+                ->delete();
+
+                $resData = responseHelper::response(200, "Berhasil menghapus dari favorite");
+                return response()->json($resData,200);
+            }else{
+                FavoriteFood::create([
+                    'user_id' => $user_id,
+                    'recipe_id' => $recipeId,
+                    'is_favorite' => true,
+                    'created_by' => $user->fullname,
+                    'modified_by' => ''
+                ]);
+
+                $resData = responseHelper::response(200, "Berhasil menghapus dari favorite");
+                return response()->json($resData,200);
+            }
+
         } catch (\Throwable $error) {
             Log::error($error->getMessage());
             $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi.');
