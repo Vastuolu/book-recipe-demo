@@ -1,0 +1,16 @@
+{
+    "recipeId":"4002418",
+    "userId":"1816",
+    "categories":{
+        "categoryId":"0",
+        "categoryName":"breakfast Updated"
+    },
+    "levels":{
+        "levelId":"1",
+        "levelName":"Mudah Updated"
+    },
+    "recipeName":"Recipe Demo Updated",
+    "timeCook":"20",
+    "ingridient":"Contoh Bahan Updated",
+    "howToCook":"Contoh Memasak Updated"
+}

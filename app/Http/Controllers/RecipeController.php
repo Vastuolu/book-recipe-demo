@@ -229,6 +229,100 @@ class RecipeController extends Controller
         }
     }
 
+    public function updateRecipe(Request $request){
+        try {
+            $validated = $request->validate([
+                'request' => 'required',
+                'file' => 'required|max:1024',
+            ]);
+
+            $rules = [
+                'recipeId' => 'required',
+                'userId' => 'required|exists:users,user_id',
+                'categories.categoryId' => 'required|exists:categories,category_id',
+                'categories.categoryName' => 'required|string',
+                'levels.levelId' => 'required|exists:levels,level_id',
+                'levels.levelName' => 'required|string',
+                'recipeName' => 'required|string|max:255',
+                'timeCook' => 'required|integer',
+                'ingridient' => 'required',
+                'howToCook' => 'required'
+            ];
+
+            if($request->hasFile('request')){
+                $requestFile = $request->file('request');
+                $requestData = file_get_contents($requestFile->getRealPath());
+                $dataArray = json_decode($requestData, true);
+            }
+
+            if(isset($dataArray['userId'])){
+                $user = User::find($dataArray['userId']);
+                if(!$user){
+                    $resData = responseHelper::response(404, 'User tidak ditemukan');
+                    return response()->json($resData, 404);
+                }
+            }
+
+            $validator = Validator::make($dataArray, $rules);
+
+            if($validator->fails()){
+                $resData = responseHelper::response(400, 'Terdapat Field Kosong');
+                return response()->json($resData, 400);
+            }
+
+            $recipeName = $dataArray['recipeName'];
+            $categoryName = $dataArray['categories']['categoryName'];
+            $levelName = $dataArray['levels']['levelName'];
+            $timestamps = now()->format('Ymd_His');
+
+            $recipe = Recipe::find($dataArray['recipeId']);
+            if(!$recipe){
+                $resData = responseHelper::response(404, "Resep tidak ditemukan");
+                return response()->json($resData,404);
+            }
+
+            $recipe->category_id = $dataArray['categories']['categoryId'];
+            $recipe->level_id = $dataArray['levels']['levelId'];
+            $recipe->recipe_name = $recipeName;
+            $recipe->time_cook = (int)$dataArray['timeCook'];
+            $recipe->ingridient = $dataArray['ingridient'];
+            $recipe->how_to_cook = $dataArray['howToCook'];
+            $recipe->modified_by = $user->fullname;
+
+            if($request->hasFile('file')){
+                $file = $request->file('file');
+                $originalExtension = $file->getClientOriginalExtension();
+                $supportedExtension = ['jpg', 'jpeg', 'png'];
+
+                if(in_array($originalExtension, $supportedExtension)){
+                    $recipeName = str_replace(' ', '_', $recipeName);
+
+                    $newFileName = "{$recipeName}_{$categoryName}_{$levelName}_{$timestamps}.{$originalExtension}";
+
+                    if(Storage::disk('s3')->exists($recipe->image_filename)){
+                        Storage::disk('s3')->delete($recipe->image_filename);
+                    }
+                    Storage::put($newFileName, file_get_contents($file->path()));
+
+                    Storage::visibility($newFileName, 'public');
+
+                    $recipe->image_filename = $newFileName;
+                }else{
+                    return response()->json(['error'=>'Invalid file Type']);
+                }
+
+            }
+
+            $recipe->save();
+            $resData = responseHelper::response(200, 'Recipe '. $recipeName . ' Berhasil diupdate');
+            return response()->json($resData, 200);
+        } catch (\Throwable $error) {
+            Log::error($error->getMessage());
+            $resData = responseHelper::response(500, "Terjadi Kesalahan server silahkan coba lagi.");
+            return response()->json($resData);
+        }
+    }
+
     public static function commonFunction($query, $request){
         try {
             $recipeName = $request->input('recipeName');
