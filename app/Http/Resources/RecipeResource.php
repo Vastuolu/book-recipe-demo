@@ -28,12 +28,12 @@ class RecipeResource extends JsonResource
         return [
             'recipeId' => $this->recipe_id,
             'categories' => [
-                'category_id' => $this->category->category_id,
-                'category_name' => $this->category->category_name,
+                'categoryId' => $this->category->category_id,
+                'categoryName' => $this->category->category_name,
             ],
             'levels'=>[
-                'level_id' => $this->level->level_id,
-                'level_name' => $this->level->level_name,
+                'levelId' => $this->level->level_id,
+                'levelName' => $this->level->level_name,
             ],
             'recipeName' => $this->recipe_name,
             'imageUrl' => $imageUrl,
