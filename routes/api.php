@@ -31,4 +31,5 @@ Route::get('/my-favorites', [FavoriteFoodController::class, 'getFavorite']);
 Route::put('/put-favorite/{recipeId}', [FavoriteFoodController::class, 'putFavorite']);
 Route::post('/recipe/add', [RecipeController::class, 'addRecipe']);
 Route::post('/recipe/edit', [RecipeController::class, 'updateRecipe']);
+Route::put('/recipe/delete/{recipeId}', [RecipeController::class, 'softDelete']);
 

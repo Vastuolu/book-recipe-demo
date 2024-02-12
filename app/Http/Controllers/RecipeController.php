@@ -323,6 +323,27 @@ class RecipeController extends Controller
         }
     }
 
+    public function softDelete(Request $request, $recipeId){
+        try {
+            $user_id = $request->input('userId');
+            $recipe = Recipe::where('user_id', $user_id)->find($recipeId);
+            if(!$recipe){
+                $resData = responseHelper::response(404, "Resep tidak ada atau tidak ditemukan");
+                return response()->json($resData);
+            }
+
+            $recipe->is_deleted = true;
+            $recipe->modified_by = User::find($user_id)->fullname;
+            $recipe->save();
+            $resData = responseHelper::response(200, "Resep ". $recipe->recipe_name . "berhasil dihapus");
+            return response()->json($resData);
+        } catch (\Throwable $error) {
+            Log::error($error->getMessage());
+            $resData = responseHelper::response(500, "Terjadi kesalahan server. silahkan coba lagi");
+            return response()->json($resData);
+        }
+    }
+
     public static function commonFunction($query, $request){
         try {
             $recipeName = $request->input('recipeName');
