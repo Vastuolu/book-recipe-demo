@@ -7,9 +7,12 @@ use App\Http\Resources\DetailRecipeResource;
 use App\Http\Resources\RecipeResource;
 use App\Models\FavoriteFood;
 use App\Models\Recipe;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Storage;
 
 class RecipeController extends Controller
 {
@@ -135,6 +138,94 @@ class RecipeController extends Controller
             Log::error($error->getMessage());
             $resData = responseHelper::response(500, 'Terjadi kesalahan server, silahkan coba lagi.');
             return response()->json($resData,500);
+        }
+    }
+
+    public function addRecipe(Request $request){
+        try {
+            $validated = $request->validate([
+                'request' => 'required',
+                'file' => 'required|max:1024',
+            ]);
+
+            $rules = [
+                'userId' => 'required|exists:users,user_id',
+                'categories.categoryId' => 'required|exists:categories,category_id',
+                'categories.categoryName' => 'required|string',
+                'levels.levelId' => 'required|exists:levels,level_id',
+                'levels.levelName' => 'required|string',
+                'recipeName' => 'required|string|max:255',
+                'timeCook' => 'required|integer',
+                'ingridient' => 'required',
+                'howToCook' => 'required'
+            ];
+
+            if($request->hasFile('request')){
+                $requestFile = $request->file('request');
+                $requestData = file_get_contents($requestFile->getRealPath());
+                $dataArray = json_decode($requestData, true);
+            }
+
+            if(isset($dataArray['userId'])){
+                $user = User::find($dataArray['userId']);
+                if(!$user){
+                    $resData = responseHelper::response(404, 'User tidak ditemukan');
+                    return response()->json($resData, 404);
+                }
+            }
+
+            $validator = Validator::make($dataArray, $rules);
+
+            if($validator->fails()){
+                $resData = responseHelper::response(400, 'Terdapat Field Kosong');
+                return response()->json($resData, 400);
+            }
+
+            $recipeName = $dataArray['recipeName'];
+            $categoryName = $dataArray['categories']['categoryName'];
+            $levelName = $dataArray['levels']['levelName'];
+            $timestamps = now()->format('Ymd_His');
+
+            $data = [
+                'user_id' => $user->user_id,
+                'category_id' => $dataArray['categories']['categoryId'],
+                'level_id' => $dataArray['levels']['levelId'],
+                'recipe_name' => $recipeName,
+                'time_cook' => (int)$dataArray['timeCook'],
+                'ingridient' => $dataArray['ingridient'],
+                'how_to_cook' => $dataArray['howToCook'],
+                'is_deleted' => false,
+                'created_by' => $user->fullname
+            ];
+
+            if($request->hasFile('file')){
+                $file = $request->file('file');
+                $originalExtension = $file->getClientOriginalExtension();
+                $supportedExtension = ['jpg', 'jpeg', 'png'];
+
+                if(in_array($originalExtension, $supportedExtension)){
+                    $recipeName = str_replace(' ', '_', $recipeName);
+
+                    $newFileName = "{$recipeName}_{$categoryName}_{$levelName}_{$timestamps}.{$originalExtension}";
+
+                    Storage::put($newFileName, file_get_contents($file->path()));
+
+                    Storage::visibility($newFileName, 'public');
+
+                    $data['image_filename'] = $newFileName;
+                }else{
+                    return response()->json(['error'=>'Invalid file Type']);
+                }
+
+            }
+
+            Recipe::create($data);
+            $resData = responseHelper::response(200, 'Recipe '. $recipeName . ' Berhasil ditambahkan');
+            return response()->json($resData, 200);
+        } catch (\Throwable $error) {
+            Log::error($error->getMessage());
+            $resData = responseHelper::response(500, "Terjadi Kesalahan server silahkan coba lagi.");
+            return response()->json($resData);
         }
     }
 

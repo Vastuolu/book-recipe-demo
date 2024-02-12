@@ -29,3 +29,5 @@ Route::get('/detail-recipe/{recipe_id}', [RecipeController::class, 'detailRecipe
 Route::get('/my-recipes', [RecipeController::class, 'myRecipes']);
 Route::get('/my-favorites', [FavoriteFoodController::class, 'getFavorite']);
 Route::put('/put-favorite/{recipeId}', [FavoriteFoodController::class, 'putFavorite']);
+Route::post('/recipe/add', [RecipeController::class, 'addRecipe']);
+

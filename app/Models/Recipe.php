@@ -12,6 +12,7 @@ class Recipe extends Model
     protected $table = 'recipes';
     public $incrementing = true;
     protected $primaryKey = 'recipe_id';
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',
